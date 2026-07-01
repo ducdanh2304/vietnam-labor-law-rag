@@ -1,11 +1,10 @@
 from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from dotenv import load_dotenv
-from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from query_rewriter import rewrite_query
-from retriever import load_retriever
+from src.query_rewriter import rewrite_query
+from src.retriever import load_retriever
 
 load_dotenv()
 
@@ -33,22 +32,19 @@ Dựa vào các điều khoản dưới đây để trả lời câu hỏi:
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
+        MessagesPlaceholder("chat_history"),
         ("human", "{input}")
     ])
 
     def retrieve_and_dedupe(input_data):
         query = input_data["input"] if isinstance(input_data, dict) else input_data
         docs = retriever.invoke(query)
-        seen = set()
-        unique = []
-        for doc in docs:
-            if doc.page_content not in seen:
-                seen.add(doc.page_content)
-                unique.append(doc)
-        return "\n\n".join(doc.page_content for doc in unique)
+        return format_docs(docs)
 
     chain = (
-        {"context": RunnableLambda(retrieve_and_dedupe), "input": RunnablePassthrough()}
+        {"context": RunnableLambda(retrieve_and_dedupe),
+         "input": RunnablePassthrough(),
+         "chat_history": lambda x: x["chat_history"]}
         | prompt
         | llm
         | StrOutputParser()
@@ -58,14 +54,12 @@ Dựa vào các điều khoản dưới đây để trả lời câu hỏi:
 
 if __name__ == "__main__":
     chain, retriever, prompt = build_chain()
-    
+
     query = "bị đuổi việc không báo trước thì sao"
-    
-    # Bước 1: rewrite
+
     rewritten = rewrite_query(query)
     print(f"Gốc:     {query}")
     print(f"Rewrite: {rewritten}\n")
-    
-    # Bước 2: dùng câu rewrite để tìm và trả lời
-    result = chain.invoke(rewritten)
-    print(result)  
+
+    result = chain.invoke({"input": rewritten, "chat_history": []})
+    print(result)

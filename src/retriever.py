@@ -1,24 +1,30 @@
+import os
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
+DATA_PATH = os.path.join(BASE_DIR, "data", "luat_lao_dong.txt")
 
 def load_retriever():
     embeddings = HuggingFaceEmbeddings(
         model_name="keepitreal/vietnamese-sbert"
     )
     vectorstore = Chroma(
-        persist_directory=r"E:\PROJECTS\luatbot\src\chroma_db",
+        persist_directory=CHROMA_DIR,
         embedding_function=embeddings
     )
 
     semantic = vectorstore.as_retriever(search_kwargs={"k":5})
 
     #Load lại documents để tạo BM25
-    loader = TextLoader(r"E:\PROJECTS\luatbot\data\luat_lao_dong.txt", encoding="utf-8")
+    loader = TextLoader(DATA_PATH, encoding="utf-8")
     documents = loader.load()
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,

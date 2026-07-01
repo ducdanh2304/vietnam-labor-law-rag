@@ -10,31 +10,27 @@ def check_relevance(query: str, docs: list) -> str:
     context = "\n\n".join(doc.page_content for doc in docs)
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """Nhiệm vụ: đánh giá xem các điều khoản có trả lời TRỰC TIẾP câu hỏi không.
+    ("system", """Nhiệm vụ: đánh giá xem các điều khoản có trả lời TRỰC TIẾP câu hỏi không.
 
 Quy tắc:
 - SUFFICIENT: các điều khoản có thông tin trực tiếp trả lời câu hỏi
 - INSUFFICIENT: các điều khoản không liên quan hoặc chỉ đề cập gián tiếp
 
 Chỉ trả về đúng 1 từ: SUFFICIENT hoặc INSUFFICIENT"""),
-        ("human", """Câu hỏi: {query}
+    ("human", """Câu hỏi: {query}
 
 Các điều khoản tìm được:
 {context}
 
-Đánh giá (chỉ 1 từ):"""),
-        ("human", """Câu hỏi: {query}
-        
-Các điều khoản tìm được:
-{context}""")
-    ])
+Đánh giá (chỉ 1 từ):""")
+])
     
     chain = prompt | llm
     result = chain.invoke({"query": query, "context": context})
     return result.content.strip()
 
 if __name__ == "__main__":
-    from retriever import load_retriever
+    from src.retriever import load_retriever
     
     retriever = load_retriever()
     

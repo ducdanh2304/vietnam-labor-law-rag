@@ -1,11 +1,14 @@
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
 
 def ingest_pdf(pdf_path: str):
     print("Đang đọc PDF ...")
@@ -16,10 +19,9 @@ def ingest_pdf(pdf_path: str):
 
     print("Đang cắt nhỏ văn bản ...")
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, # mỗi đoạn tối đa 1000 ký tự
-        chunk_overlap=200, # 200 ký tự trùng nhau giữa 2 đoạn liền kề
-        separators = ["\nĐiều", "\nKhoản", "\n\n", "\n", " "]
-        # ưu tiên cắt tại "Điều", "Khoản" để giữ nguyên cấu trúc luật
+        chunk_size=1000,
+        chunk_overlap=200,
+        separators=["\nĐiều", "\nKhoản", "\n\n", "\n", " "]
     )
     chunks = splitter.split_documents(documents)
     print(f"Cắt được {len(chunks)} đoạn")
@@ -31,11 +33,7 @@ def ingest_pdf(pdf_path: str):
     vectorstore = Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
-        persist_directory="./chroma_db"
+        persist_directory=CHROMA_DIR
     )
-    print("Xong! Đã lưu vào Chroma_db/")
-    print(documents[0].page_content[:500])
+    print(f"Xong! Đã lưu vào {CHROMA_DIR}")
     return vectorstore
-
-if __name__ == "__main__":
-    ingest_pdf(r"E:\PROJECTS\luatbot\data\luat_lao_dong.txt")

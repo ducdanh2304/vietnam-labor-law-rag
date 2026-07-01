@@ -1,9 +1,14 @@
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
-from app import build_chain
-from query_rewriter import rewrite_query
-from router import classify_query 
-from self_rag import check_relevance
+from src.chain import build_chain
+from src.query_rewriter import rewrite_query
+from src.router import classify_query 
+from src.self_rag import check_relevance
 
 st.set_page_config(page_title="LuatBot", page_icon="⚖️")
 st.title("⚖️ LuatBot")
@@ -77,7 +82,7 @@ if query := st.chat_input("Nhập câu hỏi về luật lao động..."):
                         st.session_state.messages.append({"role": "assistant", "content": answer})
                         st.stop()
                 
-                result = st.session_state.chain.invoke({"input": rewritten})
+                result = st.session_state.chain.invoke({"input": rewritten, "chat_history": chat_history})
                 # st.write(type(result), result)
                 answer = str(result)
             

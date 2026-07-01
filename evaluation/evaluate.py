@@ -1,9 +1,9 @@
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from dotenv import load_dotenv
-from retriever import load_retriever
-from query_rewriter import rewrite_query
-from app import build_chain
+from src.retriever import load_retriever
+from src.query_rewriter import rewrite_query
+from src.chain import build_chain
 
 load_dotenv()
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         rewritten = rewrite_query(case["question"])
         docs = retriever.invoke(rewritten)
         print(f"Chunks: {[doc.page_content[:80] for doc in docs]}")
-        result = chain.invoke(rewritten)
+        result = chain.invoke({"input": rewritten, "chat_history": []})
         answer = result
         score = judge(case["question"], answer, case["ground_truth"])
         scores.append(score)
